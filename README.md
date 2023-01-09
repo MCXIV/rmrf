@@ -25,13 +25,15 @@ If you made a mistake, you can recover the files by typing ```rmundo```: it will
 
 Be careful, you have less than 10 seconds to recover the files.
 
+Alternatively, you can set the ```RMRF_TIMEOUT``` environment variable to change the timeout (in seconds).
+
 ## Examples
-```rmrf file*```
+```rm file*```
 
-```rmrf folder```
+```rm folder```
 
-```rmrf file1 file2 file3```
+```rm file1 file2 file3```
 
-```rmrf folder/file```
+```rm folder/file```
 
-```rmrf file1 folder/file2```
+```rm file1 folder/file2```

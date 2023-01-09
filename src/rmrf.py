@@ -15,20 +15,31 @@ import multiprocessing as mp
 from rich import print as rprint
 
 # --------------------------------------------------
-# Usage: python3 main.py
-# --------------------------------------------------
 
 TEMP_FOLDER = 'rmrftmp/'
 
 
-def delete_after_timeout():
-    time.sleep(10)
+def delete_after_timeout(timeout=10):
+    """
+    It deletes the temporary folder after a certain amount of time
+
+    :param timeout: The amount of time to wait before deleting the files, defaults to 10 (optional)
+                    It can be changed by setting the environment variable RMRF_TIMEOUT  
+    """
+
+    if os.environ.get('RMRF_TIMEOUT'):
+        timeout = int(os.environ.get('RMRF_TIMEOUT'))
+        if timeout < 0:
+            rprint(
+                '[bold red]Haha, a negative timeout, nice try you fucking twat. Cheh, I deleted your files. [/bold red]')
+            timeout = 0
+    time.sleep(timeout)
     shutil.rmtree(TEMP_FOLDER)
 
 
 def safe_rmrf() -> None:
     """
-    It moves the files to a temporary folder and deletes them after 10 seconds.
+    It moves the files to a temporary folder and deletes them after 10 seconds (Default)
     It doesn't delete the files if the user sends an other command 'rmundo'.
     """
 
@@ -37,6 +48,10 @@ def safe_rmrf() -> None:
         path = glob.glob('*')
     if path == ['..']:
         path = glob.glob('../*')
+    for element in path:
+        if not os.path.exists(element):
+            rprint(f'[bold red]No such file or directory: {element}[/bold red]')
+            os._exit(1)
 
     if not os.path.exists(TEMP_FOLDER):
         os.makedirs(TEMP_FOLDER)
@@ -66,6 +81,5 @@ def undo_rmrf():
             previousPath[i] = previousPath[i].replace('\n', '')
             shutil.move(listFiles[i], previousPath[i])
         rprint(f'[bold green]Restored {previousPath}[/bold green]')
-
     else:
         rprint('[bold red]Nothing to restore[/bold red]')
