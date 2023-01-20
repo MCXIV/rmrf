@@ -13,6 +13,7 @@ import multiprocessing as mp
 
 # 3rd party
 from rich import print as rprint
+from rich.tree import Tree
 
 # --------------------------------------------------
 
@@ -34,7 +35,11 @@ def delete_after_timeout(timeout=10):
                 '[bold red]Haha, a negative timeout, nice try you fucking twat. Cheh, I deleted your files. [/bold red]')
             timeout = 0
     time.sleep(timeout)
-    shutil.rmtree(TEMP_FOLDER)
+    if os.path.exists(TEMP_FOLDER):
+        shutil.rmtree(TEMP_FOLDER)
+    else:
+        rprint(f'[bold red][i]{TEMP_FOLDER}[/i] can\'t be find. Maybe it has already been deleted?[/bold red]')
+        os._exit(1) # It doesn't really terminate, idk why
 
 
 def safe_rmrf() -> None:
@@ -57,7 +62,7 @@ def safe_rmrf() -> None:
         os.makedirs(TEMP_FOLDER)
 
     for file in path:
-        if os.path.exists(file):
+        if os.path.exists(file) and file != 'PATH':
             if os.path.isdir(file):
                 shutil.move(file, TEMP_FOLDER)
             elif os.path.isfile(file):
@@ -68,18 +73,40 @@ def safe_rmrf() -> None:
     os._exit(0)
 
 
+def create_tree(path, tree):
+    """
+    It takes a path and a tree, and adds to the tree all the files and subdirectories of the path
+
+    :param path: The path to the directory you want to print out
+    :param tree: The tree to print
+    """
+
+    for entry in os.listdir(path):
+        if entry != 'PATH':
+            full_path = os.path.join(path, entry)
+            if os.path.isdir(full_path):
+                sub_tree = Tree(entry)
+                tree.add(sub_tree)
+                create_tree(full_path, sub_tree)
+            else:
+                tree.add(entry)
+
+
 def undo_rmrf():
     """
     It restores the deleted files.
     """
 
     if os.path.exists(TEMP_FOLDER):
+        rootTree = Tree(TEMP_FOLDER)
+        create_tree(TEMP_FOLDER, rootTree)
         previousPath = sorted(open(f'{TEMP_FOLDER}PATH', 'r').readlines())
         listFiles = sorted(f for f in glob.glob(f'{TEMP_FOLDER}/*') if f != f'{TEMP_FOLDER}PATH')
 
         for i in range(len(previousPath)):
             previousPath[i] = previousPath[i].replace('\n', '')
             shutil.move(listFiles[i], previousPath[i])
-        rprint(f'[bold green]Restored {previousPath}[/bold green]')
+        rprint('[bold green][i]rmrf[/i] successfully restored :')
+        rprint(rootTree)
     else:
         rprint('[bold red]Nothing to restore[/bold red]')
